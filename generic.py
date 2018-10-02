@@ -141,3 +141,16 @@ def iniLogger(loggerName, fileName, _console):
         logger.addHandler(ch)
 
     return logger
+
+
+#--Get the closest N neighbors
+#Input: m by k (dimension) numpy array
+#Output: top N neighbor ids
+def getClosestNeighbors(topN, data, metric='euclidean'):
+    import numpy as np
+    import scipy as sp
+
+    distance = sp.spatial.distance.squareform(sp.spatial.distance.pdist(data, metric))
+    neighborIds = np.argsort(distance, axis=-1)[:, 1:topN + 1]
+
+    return neighborIds
