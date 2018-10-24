@@ -19,13 +19,20 @@ class SettingContainer(UniversalContainer):
     __init__ = update
 
 
-#--Obj config pattern
-def configObj():
-    from collections import namedtuple
-    
-    with open('config.json', 'r', encoding='utf-8') as f:
-        dic = json.load(f)
-        CONFIG = namedtuple("Config", dic.keys())(*dic.values())
+#--Convert data to object form (recursive)
+def data2Obj(data):
+    from collections import namedtuple, Iterable
+
+    if isinstance(data, dict):
+        return namedtuple(
+            'namedtuple', data.keys()
+        )(
+            *(data2Obj(value) for value in data.values())
+        )
+    elif isinstance(data, Iterable) and not isinstance(data, str):
+        return type(data)(data2Obj(value) for value in data)
+    else:
+        return data
 
 
 #--Flatten list (recursive)
