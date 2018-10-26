@@ -30,6 +30,18 @@ class ClsDecorator():
 
         cls.__setattr__ =  setattr
         return cls
+    
+    def grantKeywordUpdate(cls):
+        """
+        Grant attribute modification by `update` method
+        """
+        def update(self, **kwarg):
+            for key, value in kwarg.items():
+                self.__dict__[key] = value
+
+        cls.update = update
+        cls.__init__ = update        
+        return cls
 
 
 #--Universal container
@@ -65,21 +77,18 @@ class UniversalContainer():
 
 #--Setting container
 @ClsDecorator.prohibitAttrSetter
+@ClsDecorator.grantKeywordUpdate
 class SettingContainer(UniversalContainer):
     """
     Usage
     - Convenient keyword = parameter setting.
     - Protected attribute setter. Use `update(key=value)` to modify content.
     """
-
-    def update(self, **kwarg):
-        for key, value in kwarg.items():
-            self.__dict__[key] = value
-
-    __init__ = update
+    pass
 
 
 #--Convert data to object form (recursive)
+#If wants to restrict access to attributes, inherit SettingContainer instead
 class ConvertedContainer(UniversalContainer):
     """
     Usage
