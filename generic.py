@@ -15,6 +15,23 @@ class FuncDecorator():
 
             return original_output
         return new_function
+    
+    def delayOperation(time):
+        """
+        Delay operation by `time` secs
+        - 0.7*time + 0.6*random()*time
+        - When time=10, it's 7-13 secs
+        """
+        from time import sleep
+        from random import random
+        def wrapper(original_function):
+            def new_function(*args,**kwargs):
+                sleep(0.7 * time + 0.6 * random() * time)
+
+                original_output = original_function(*args,**kwargs)   
+                return original_output
+            return new_function
+        return wrapper    
 
 
 #--Decorators for classes
@@ -128,6 +145,45 @@ def getConfigObj(path):
         else: raise UnknownFileType('\'{}\' is not a supported file type.'.format(ext))
 
     return ConvertedContainer(config_dic)
+
+
+def writeJsls(obj, path):
+    """
+    Write all objs of a iterable into a jsl file
+    """
+    import json
+    import numpy
+
+    #Deal with the json default encoder defect
+    #https://stackoverflow.com/questions/27050108/convert-numpy-type-to-python/27050186#27050186
+    class NumpyEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, numpy.integer):
+                return int(obj)
+            elif isinstance(obj, numpy.floating):
+                return float(obj)
+            elif isinstance(obj, numpy.ndarray):
+                return obj.tolist()
+            else:
+                return super(NumpyEncoder, self).default(obj)
+            
+    with open(path, mode='a') as f:
+        for item in obj:
+            json.dump(item, f, cls=NumpyEncoder)
+            f.write('\n')
+
+
+def readJsls(path):
+    """
+    Read all objs in one jsl file
+    """
+    import json
+
+    output = []
+    with open(path, mode='r') as f:
+        for line in f:
+            output.append(json.loads(line))
+    return output
 
 
 #--Flatten list (recursive)
