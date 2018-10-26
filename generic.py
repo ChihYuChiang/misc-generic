@@ -1,3 +1,37 @@
+#--Decorators for functions
+class FuncDecorator():
+
+    def timeOperation(original_function):
+        """
+        Print elapsed time of 1 time operation.
+        """
+        def new_function(*args,**kwargs):
+            import datetime
+   
+            before = datetime.datetime.now()                     
+            original_output = original_function(*args,**kwargs)                
+            after = datetime.datetime.now()           
+            print('Elapsed Time = {0}'.format(after - before))
+
+            return original_output
+        return new_function
+
+
+#--Decorators for classes
+class ClsDecorator():
+
+    def prohibitAttrSetter(cls):
+        """
+        Prohibit access to attribute setter
+        """
+        def setattr(self, key, value):
+            class ProhibittedOperation(Exception): pass
+            raise ProhibittedOperation('Not allowed to modify attributes directly.')
+
+        cls.__setattr__ =  setattr
+        return cls
+
+
 #--Universal container
 class UniversalContainer():
     """
@@ -30,6 +64,7 @@ class UniversalContainer():
 
 
 #--Setting container
+@ClsDecorator.prohibitAttrSetter
 class SettingContainer(UniversalContainer):
     """
     Usage
@@ -37,14 +72,9 @@ class SettingContainer(UniversalContainer):
     - Protected attribute setter. Use `update(key=value)` to modify content.
     """
 
-    def __setattr__(self, key, value):
-        class ProhibittedOperation(Exception): pass
-        raise self.ProhibittedOperation('Use SettingContainer.update to modify attributes.')
-
     def update(self, **kwarg):
         for key, value in kwarg.items():
             self.__dict__[key] = value
-            # setattr(self, key, value)
 
     __init__ = update
 
@@ -52,7 +82,8 @@ class SettingContainer(UniversalContainer):
 #--Convert data to object form (recursive)
 class ConvertedContainer(UniversalContainer):
     """
-    Convert data to object form (recursive).
+    Usage
+    - Convert dict to object form (recursive).
     """
     
     def __new__(cls, data):
