@@ -171,6 +171,8 @@ def writeJsls(obj, path):
         for item in obj:
             json.dump(item, f, cls=NumpyEncoder)
             f.write('\n')
+    
+    print('Completed writing \'{}\', appended obj len {}.'.format(path, len(obj)))
 
 
 def readJsls(path):
@@ -183,18 +185,22 @@ def readJsls(path):
     with open(path, mode='r') as f:
         for line in f:
             output.append(json.loads(line))
+    
+    print('Completed reading \'{}\', loaded obj len {}.'.format(path, len(output)))
     return output
 
 
-#--Flatten list (recursive)
-#Parameter: l, a list
-#Return: a flattened list as a generator
-def flattenList(l):
+def flattenList(l, nLevel=-1):
+    """
+    Flatten list (recursive for `nLevel`)
+    - Parameter: `l`, a list
+    - Return: a flattened list as a generator
+    """
     import collections
 
     for el in l:
-        if isinstance(el, collections.Sequence) and not isinstance(el, (str, bytes)):
-            yield from flattenList(el)
+        if isinstance(el, collections.Sequence) and not isinstance(el, (str, bytes)) and nLevel != 0:
+            yield from flattenList(el, nLevel - 1)
         else:
             yield el
 
@@ -275,27 +281,34 @@ def kFold(k, nMN, seed=1):
     
 
 #--Logger
-def iniLogger(loggerName, fileName, _console):
+def initLogger(loggerName, console=True, consoleLevel='DEBUG', fileLevel='INFO'):
+    """
+    Initialize a logger using logging module
+    - INFO or up will be saved in file.
+    - DEBUG or up will be printed in console.
+    - https://docs.python.org/3/library/logging.html#logging-levels.
+    - More information is logged in log file than in console. 
+    """
     import logging
 
-    #Use the default logger
+    #Create new logger
     logger = logging.getLogger(loggerName)
     logger.setLevel(logging.DEBUG)
 
-    #Create formatter
-    formatter = logging.Formatter('%(message)s')
+    #Formatter reference
+    #'%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
     #Create file handler and add to logger
-    fh = logging.FileHandler('../log/{}'.format(fileName), mode='w+')
-    fh.setLevel(logging.INFO)
-    fh.setFormatter(formatter)
+    fh = logging.FileHandler('log/{}.log'.format(loggerName), mode='w+')
+    fh.setLevel(fileLevel)
+    fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     logger.addHandler(fh)
     
     #Create console handler and add to logger
-    if _console:
+    if console:
         ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(formatter)
+        ch.setLevel(consoleLevel)
+        ch.setFormatter(logging.Formatter('%(message)s'))
         logger.addHandler(ch)
 
     return logger
