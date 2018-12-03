@@ -193,7 +193,7 @@ def readJsls(path):
 def flattenList(l, nLevel=-1):
     """
     Flatten list (recursive for `nLevel`)
-    - Parameter: `l`, a list
+    - Parameter: `l`, a list; `nLevel`=-1 if extract all levels
     - Return: a flattened list as a generator
     """
     import collections
@@ -325,3 +325,38 @@ def getClosestNeighbors(topN, data, metric='euclidean'):
     neighborIds = np.argsort(distance, axis=-1)[:, 1:topN + 1]
 
     return neighborIds
+
+
+def divideSets(proportion, nSample, seed=1):
+    """
+    Acquire ids of arbitrary set division
+    - Given proportion and the number of samples, return ids (starts from 0) of each set [set, set, ...].
+    - An element in `proportion` represents a set.
+    - The proportion must sum to 1.
+    """
+    import numpy as np
+
+    assert sum(proportion) == 1, '`proportion` must sum to 1.'
+
+    #Reset np seed
+    np.random.seed(seed=seed)
+
+    #Number of indice for each set
+    nIds = np.around(np.array(proportion) * nSample)
+
+    #Shuffle the indice pool
+    rIndiceGen = np.arange(nSample)
+    np.random.shuffle(rIndiceGen)
+    rIndiceGen = (i for i in rIndiceGen)
+
+    #Assign indice to each set
+    ids = []
+    for nId in nIds:
+        id = []
+        while nId > 0:
+            try: id.append(next(rIndiceGen))
+            except StopIteration: break
+            nId -= 1
+        ids.append(id)
+
+    return ids
