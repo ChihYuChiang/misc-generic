@@ -1,21 +1,21 @@
-#--Decorators for functions
+# -- Decorators for functions
 class FuncDecorator():
 
     def timeOperation(original_function):
         """
         Print elapsed time of 1 time operation.
         """
-        def new_function(*args,**kwargs):
+        def new_function(*args, **kwargs):
             import datetime
-   
-            before = datetime.datetime.now()                     
-            original_output = original_function(*args,**kwargs)                
-            after = datetime.datetime.now()           
+
+            before = datetime.datetime.now()
+            original_output = original_function(*args, **kwargs)
+            after = datetime.datetime.now()
             print('Elapsed Time = {0}'.format(after - before))
 
             return original_output
         return new_function
-    
+
     def delayOperation(time):
         """
         Delay operation by `time` secs
@@ -25,16 +25,18 @@ class FuncDecorator():
         from time import sleep
         from random import random
         def wrapper(original_function):
-            def new_function(*args,**kwargs):
+
+            def new_function(*args, **kwargs):
                 sleep(0.7 * time + 0.6 * random() * time)
 
-                original_output = original_function(*args,**kwargs)   
+                original_output = original_function(*args, **kwargs)
                 return original_output
+
             return new_function
-        return wrapper    
+        return wrapper
 
 
-#--Decorators for classes
+# -- Decorators for classes
 class ClsDecorator():
 
     def prohibitAttrSetter(cls):
@@ -45,9 +47,9 @@ class ClsDecorator():
             class ProhibittedOperation(Exception): pass
             raise ProhibittedOperation('Not allowed to modify attributes directly.')
 
-        cls.__setattr__ =  setattr
+        cls.__setattr__ = setattr
         return cls
-    
+
     def grantKeywordUpdate(cls):
         """
         Grant attribute modification by `update` method
@@ -57,11 +59,11 @@ class ClsDecorator():
                 self.__dict__[key] = value
 
         cls.update = update
-        cls.__init__ = update        
+        cls.__init__ = update
         return cls
 
 
-#--Universal container
+# -- Universal container
 class UniversalContainer():
     """
     Usage
@@ -92,7 +94,7 @@ class UniversalContainer():
         return [item for item in dir(self) if callable(getattr(self, item)) and not item.startswith("__")]
 
 
-#--Setting container
+# -- Setting container
 @ClsDecorator.prohibitAttrSetter
 @ClsDecorator.grantKeywordUpdate
 class SettingContainer(UniversalContainer):
@@ -104,14 +106,14 @@ class SettingContainer(UniversalContainer):
     pass
 
 
-#--Convert data to object form (recursive)
-#If wants to restrict access to attributes, inherit SettingContainer instead
+# -- Convert data to object form (recursive)
+# If wants to restrict access to attributes, inherit SettingContainer instead
 class ConvertedContainer(UniversalContainer):
     """
     Usage
     - Convert dict to object form (recursive).
     """
-    
+
     def __new__(cls, data):
         from collections import Iterable
 
@@ -127,13 +129,14 @@ class ConvertedContainer(UniversalContainer):
             setattr(self, list(data.keys())[i], ConvertedContainer(list(data.values())[i]))
 
 
-#--Import config files as an object
+# -- Import config files as an object
 def getConfigObj(path):
     """
     Read config files into an obj container.
     - Support file type: .json, .yml.
     """
     import yaml
+    import json
     import re
 
     class UnknownFileType(Exception): pass
@@ -154,8 +157,8 @@ def writeJsls(obj, path):
     import json
     import numpy
 
-    #Deal with the json default encoder defect
-    #https://stackoverflow.com/questions/27050108/convert-numpy-type-to-python/27050186#27050186
+    # Deal with the json default encoder defect
+    # https://stackoverflow.com/questions/27050108/convert-numpy-type-to-python/27050186#27050186
     class NumpyEncoder(json.JSONEncoder):
         def default(self, obj):
             if isinstance(obj, numpy.integer):
@@ -166,12 +169,12 @@ def writeJsls(obj, path):
                 return obj.tolist()
             else:
                 return super(NumpyEncoder, self).default(obj)
-            
+
     with open(path, mode='a') as f:
         for item in obj:
             json.dump(item, f, cls=NumpyEncoder)
             f.write('\n')
-    
+
     print('Completed writing \'{}\', appended obj len {}.'.format(path, len(obj)))
 
 
@@ -185,7 +188,7 @@ def readJsls(path):
     with open(path, mode='r') as f:
         for line in f:
             output.append(json.loads(line))
-    
+
     print('Completed reading \'{}\', loaded obj len {}.'.format(path, len(output)))
     return output
 
@@ -205,14 +208,14 @@ def flattenList(l, nLevel=-1):
             yield el
 
 
-#--Element-wise list operation
-#Return: operated list
+# -- Element-wise list operation
+# Return: operated list
 def listEWiseOp(op, l):
     return list(map(op, l))
 
 
-#--Graphing 2-D scatter plot
-#With distribution and linear fitting line
+# -- Graphing 2-D scatter plot
+# With distribution and linear fitting line
 def scatter(vectors, names):
     import seaborn as sns
     import pandas as pd
@@ -225,16 +228,16 @@ def scatter(vectors, names):
         names[1]: vectors[1]
     })
 
-    g = sns.jointplot(x=names[0], y=names[1], data=df, color="m", kind="reg", scatter_kws={"s": 10})
+    sns.jointplot(x=names[0], y=names[1], data=df, color="m", kind="reg", scatter_kws={"s": 10})
     plt.show()
 
 
-#--Evaluate model with mse, cor, and graphing
+# -- Evaluate model with mse, cor, and graphing
 def evalModel(predictions, truth, nMN, title, graph, logger=None):
     import numpy as np
     import scipy as sp
 
-    #Description
+    # Description
     mse = np.sum(np.square(predictions - truth)) / nMN
     cor = np.corrcoef(predictions, truth)[0, 1]
     rho, _ = sp.stats.spearmanr(a=predictions, b=truth)
@@ -246,65 +249,65 @@ def evalModel(predictions, truth, nMN, title, graph, logger=None):
     output('Correlation = {}'.format(cor))
     output('RankCorrelation = {}'.format(rho))
 
-    #Graphing
+    # Graphing
     if graph: scatter([truth, predictions], ['truth', 'predictions'])
 
     return mse, cor, rho
 
 
-#--Acquire ids of a k-fold training testing set
+# -- Acquire ids of a k-fold training testing set
 def kFold(k, nMN, seed=1):
     import numpy as np
 
-    #Reset the seed
+    # Reset the seed
     np.random.seed(seed=seed)
 
-    #The indice to be selected
+    # The indice to be selected
     rMN = np.arange(nMN)
     np.random.shuffle(rMN)
 
-    #Indicator
-    #To make sure the distribution is as evenly as possible
+    # Indicator
+    # To make sure the distribution is as evenly as possible
     ind = abs(nMN - (nMN // k + 1) * (k - 1) - (nMN // k + 1)) < abs(nMN - (nMN // k) * (k - 1) - (nMN // k))
 
-    #Series id based on k
+    # Series id based on k
     anchor = np.arange(k) * (nMN // k + ind)
-    
-    #Acquire the training and testing set ids
+
+    # Acquire the training and testing set ids
     id_test = [rMN[anchor[i]:(anchor[i + 1] if i + 1 != len(anchor) else None)] for i in range(len(anchor))]
     id_train = [np.setdiff1d(rMN, id_test[i]) for i in range(len(id_test))]
 
-    #Deal with 1 fold (using entire dataset to train and test)
+    # Deal with 1 fold (using entire dataset to train and test)
     if k == 1: id_train = id_test
 
     return id_train, id_test
-    
 
-#--Logger
+
+# -- Logger
 def initLogger(loggerName, console=True, consoleLevel='DEBUG', fileLevel='INFO'):
     """
     Initialize a logger using logging module
     - INFO or up will be saved in file.
     - DEBUG or up will be printed in console.
     - https://docs.python.org/3/library/logging.html#logging-levels.
-    - More information is logged in log file than in console. 
+    - More information is logged in log file than in console.
     """
     import logging
 
-    #Create new logger
+    # Create new logger
     logger = logging.getLogger(loggerName)
     logger.setLevel(logging.DEBUG)
 
-    #Formatter reference
-    #'%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    # Formatter reference
+    # '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
-    #Create file handler and add to logger
+    # Create file handler and add to logger
     fh = logging.FileHandler('log/{}.log'.format(loggerName), mode='w+')
     fh.setLevel(fileLevel)
     fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     logger.addHandler(fh)
-    
-    #Create console handler and add to logger
+
+    # Create console handler and add to logger
     if console:
         ch = logging.StreamHandler()
         ch.setLevel(consoleLevel)
@@ -314,9 +317,21 @@ def initLogger(loggerName, console=True, consoleLevel='DEBUG', fileLevel='INFO')
     return logger
 
 
-#--Get the closest N neighbors
-#Input: m by k (dimension) numpy array
-#Output: top N neighbor ids
+# -- Make exception message in one line for better logging
+def flattenErrorTraceback(e: BaseException) -> str:
+    import traceback
+
+    eTraceback = traceback.format_exception(value=e)
+    eTraceback_ines = []
+    for line in [line.rstrip('\n') for line in eTraceback]:
+        eTraceback_ines.extend(line.splitlines())
+
+    return eTraceback_ines
+
+
+# -- Get the closest N neighbors
+# Input: m by k (dimension) numpy array
+# Output: top N neighbor ids
 def getClosestNeighbors(topN, data, metric='euclidean'):
     import numpy as np
     import scipy as sp
@@ -338,18 +353,18 @@ def divideSets(proportion, nSample, seed=1):
 
     assert sum(proportion) == 1, '`proportion` must sum to 1.'
 
-    #Reset np seed
+    # Reset np seed
     np.random.seed(seed=seed)
 
-    #Number of indice for each set
+    # Number of indice for each set
     nIds = np.around(np.array(proportion) * nSample)
 
-    #Shuffle the indice pool
+    # Shuffle the indice pool
     rIndiceGen = np.arange(nSample)
     np.random.shuffle(rIndiceGen)
     rIndiceGen = (i for i in rIndiceGen)
 
-    #Assign indice to each set
+    # Assign indice to each set
     ids = []
     for nId in nIds:
         id = []
