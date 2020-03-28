@@ -317,6 +317,66 @@ def initLogger(loggerName, console=True, consoleLevel='DEBUG', fileLevel='INFO')
     return logger
 
 
+# -- Structured logging
+class LogMsg():
+    import json
+    from typing import Callable, Any
+
+    # Py3.8 new syntax for positional arg
+    # def __init__(self, handler: str, /, **kwargs):
+    def __init__(self, handler: Callable, **kwargs: Any):
+        self.msg = {'handler': handler.__name__, **kwargs}
+
+    def __str__(self) -> str:
+        return self.json.dumps(self.msg)
+
+
+class Logger():
+    import logging
+    from typing import Tuple, List, Union
+
+    formatStr = '''{
+        "name": "%(name)s",
+        "level": "%(levelname)s",
+        "time": "%(asctime)s",
+        "lineUserId": "unknown",
+        "message": %(message)s
+    }'''
+    logger: logging.Logger
+    handlers: List[logging.Handler]
+
+    def __init__(self, name, *handlerConfigs: Tuple[logging.Handler, int]):
+        self.logger = self.logging.getLogger(name)
+        for handlerConfig in handlerConfigs:
+            self.addHandler(*handlerConfigs)
+
+    def addHandler(self, handler: logging.Handler, handlerLevel: int):
+        handler.setLevel(handlerLevel)
+        handler.setFormatter(self.logging.Formatter(self.formatStr))
+        self.logger.addHandler(handler)
+
+    def setLineUserId(self, lineUserId: str):
+        self.formatStr = self.formatStr.replace(
+            '"lineUserId": "unknown"',
+            '"lineUserId": "{}"'.format(lineUserId), 1
+        )
+        for handler in self.handlers:
+            handler.setFormatter(self.logging.Formatter(self.formatStr))
+
+    def error(self, msg: str):
+        self.logger.error(msg)
+
+    def warning(self, msg: str):
+        self.logger.warning(msg)
+
+    def info(self, msg: LogMsg):
+        # Json format
+        self.logger.info(msg)
+
+    def debug(self, msg: Union[LogMsg, str]):
+        self.logger.debug(msg)
+
+
 # -- Make exception message in one line for better logging
 def flattenErrorTraceback(e: BaseException) -> str:
     import traceback
